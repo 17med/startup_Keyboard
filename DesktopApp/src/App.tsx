@@ -5,11 +5,70 @@ import ReactFlow, {
   Controls,
   ReactFlowProvider,
   applyNodeChanges,
+  Handle,
+  Position,
+  Node,
+  Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { Handle, Position } from "reactflow";
 
-function ShapeColorNode({ data }) {
+// Types
+type KeyType = {
+  keyName: string;
+};
+
+type NodeData = {
+  key: string;
+};
+
+const KEYS: KeyType[] = [
+  ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    .split("")
+    .map((k) => ({ keyName: k })),
+  ...[
+    "`",
+    "-",
+    "=",
+    "[",
+    "]",
+    "\\",
+    ";",
+    "'",
+    ",",
+    ".",
+    "/",
+    "Enter",
+    "Backspace",
+    "Tab",
+    "CapsLock",
+    "Shift",
+    "Control",
+    "Alt",
+    "Meta",
+    "Space",
+    "Escape",
+    "ArrowUp",
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "Insert",
+    "Delete",
+    "Home",
+    "End",
+    "PageUp",
+    "PageDown",
+  ].map((k) => ({ keyName: k })),
+  ...Array.from({ length: 12 }, (_, i) => ({ keyName: `F${i + 1}` })),
+];
+
+// Custom Node
+function ShapeKeyNode({ data }: { data: NodeData }) {
+  const [key, setKey] = useState(data.key);
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setKey(e.target.value);
+  };
+
   return (
     <div
       style={{
@@ -27,18 +86,24 @@ function ShapeColorNode({ data }) {
           style={{
             width: 20,
             height: 20,
-            backgroundColor: data.color,
+            backgroundColor: "#ff0071",
             borderRadius: 3,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             color: "white",
+            fontWeight: "bold",
           }}
         >
-          A
+          {key.substring(0, 2)}
         </div>
-        <select>
-          <option value={"none"}>None</option>
+        <select value={key} onChange={handleChange}>
+          <option value="none">None</option>
+          {KEYS.map((k) => (
+            <option key={k.keyName} value={k.keyName}>
+              {k.keyName}
+            </option>
+          ))}
         </select>
       </div>
       <Handle type="source" position={Position.Right} />
@@ -47,21 +112,30 @@ function ShapeColorNode({ data }) {
   );
 }
 
-const nodeTypes = { shapeColor: ShapeColorNode };
+// Node types
+const nodeTypes = { shapeKey: ShapeKeyNode };
 
-const initialNodes = [
+// Initial Nodes
+const initialNodes: Node<NodeData>[] = [
   {
     id: "1",
-    type: "shapeColor",
+    type: "shapeKey",
     position: { x: 100, y: 100 },
-    data: { color: "#ff0071" },
+    data: { key: "A" },
+  },
+  {
+    id: "2",
+    type: "shapeKey",
+    position: { x: 300, y: 100 },
+    data: { key: "A" },
   },
 ];
 
-const edges = [];
+const initialEdges: Edge[] = [];
 
 function Flow() {
   const [nodes, setNodes] = useState(initialNodes);
+  const [edges] = useState(initialEdges);
   const width = 1100;
   const height = 800;
 
@@ -74,10 +148,6 @@ function Flow() {
         onNodesChange={(changes) =>
           setNodes((nds) => applyNodeChanges(changes, nds))
         }
-        nodeExtent={[
-          [0, 0],
-          [width, height],
-        ]}
         zoomOnScroll={false}
         panOnScroll={false}
         panOnDrag={false}
