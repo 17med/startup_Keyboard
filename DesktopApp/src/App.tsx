@@ -1,133 +1,45 @@
-// App.tsx
 import React, { useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
   ReactFlowProvider,
   applyNodeChanges,
-  Handle,
-  Position,
   Node,
   Edge,
 } from "reactflow";
 import "reactflow/dist/style.css";
-
-// Types
-type KeyType = {
-  keyName: string;
-};
-
+import ShapeKeyNode from "./Components/ShapeKeyNode";
+import { Start, End } from "./Components/Start&End";
 type NodeData = {
   key: string;
 };
 
-const KEYS: KeyType[] = [
-  ..."ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    .split("")
-    .map((k) => ({ keyName: k })),
-  ...[
-    "`",
-    "-",
-    "=",
-    "[",
-    "]",
-    "\\",
-    ";",
-    "'",
-    ",",
-    ".",
-    "/",
-    "Enter",
-    "Backspace",
-    "Tab",
-    "CapsLock",
-    "Shift",
-    "Control",
-    "Alt",
-    "Meta",
-    "Space",
-    "Escape",
-    "ArrowUp",
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "Insert",
-    "Delete",
-    "Home",
-    "End",
-    "PageUp",
-    "PageDown",
-  ].map((k) => ({ keyName: k })),
-  ...Array.from({ length: 12 }, (_, i) => ({ keyName: `F${i + 1}` })),
-];
+const nodeTypes = { shapeKey: ShapeKeyNode, start: Start, end: End };
 
-// Custom Node
-function ShapeKeyNode({ data }: { data: NodeData }) {
-  const [key, setKey] = useState(data.key);
-
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setKey(e.target.value);
-  };
-
-  return (
-    <div
-      style={{
-        padding: 10,
-        background: "white",
-        borderRadius: 10,
-        border: "1px solid #ccc",
-        width: 120,
-      }}
-    >
-      <div style={{ fontWeight: "bold", fontSize: 13 }}>Key</div>
-      <br />
-      <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <div
-          style={{
-            width: 20,
-            height: 20,
-            backgroundColor: "#ff0071",
-            borderRadius: 3,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            color: "white",
-            fontWeight: "bold",
-          }}
-        >
-          {key.substring(0, 2)}
-        </div>
-        <select value={key} onChange={handleChange}>
-          <option value="none">None</option>
-          {KEYS.map((k) => (
-            <option key={k.keyName} value={k.keyName}>
-              {k.keyName}
-            </option>
-          ))}
-        </select>
-      </div>
-      <Handle type="source" position={Position.Right} />
-      <Handle type="target" position={Position.Left} />
-    </div>
-  );
-}
-
-// Node types
-const nodeTypes = { shapeKey: ShapeKeyNode };
-
-// Initial Nodes
 const initialNodes: Node<NodeData>[] = [
   {
-    id: "1",
-    type: "shapeKey",
-    position: { x: 100, y: 100 },
-    data: { key: "A" },
+    id: "0",
+    type: "start",
+    position: { x: 50, y: 50 },
+    data: { key: "Start" },
   },
+  {
+    id: "1",
+    type: "end",
+    position: { x: 100, y: 50 },
+    data: { key: "End" },
+  }, // Start node
   {
     id: "2",
     type: "shapeKey",
-    position: { x: 300, y: 100 },
+    position: { x: 150, y: 100 },
     data: { key: "A" },
+  },
+  {
+    id: "3",
+    type: "shapeKey",
+    position: { x: 350, y: 100 }, // Changed position to avoid overlap
+    data: { key: "B" },
   },
 ];
 
@@ -135,9 +47,20 @@ const initialEdges: Edge[] = [];
 
 function Flow() {
   const [nodes, setNodes] = useState(initialNodes);
-  const [edges] = useState(initialEdges);
+  const [edges, setEdges] = useState(initialEdges); // Use state for edges
+
   const width = 1100;
   const height = 800;
+
+  // Handle changes to nodes (e.g., dragging or editing)
+  const handleNodeChange = (changes: any) => {
+    setNodes((nds) => applyNodeChanges(changes, nds));
+  };
+
+  // Handle connection between nodes
+  const handleConnect = (params: Edge) => {
+    setEdges((eds) => [...eds, params]); // Add the new edge to the state
+  };
 
   return (
     <div style={{ width, height, backgroundColor: "#323232" }}>
@@ -145,13 +68,8 @@ function Flow() {
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
-        onNodesChange={(changes) =>
-          setNodes((nds) => applyNodeChanges(changes, nds))
-        }
-        zoomOnScroll={false}
-        panOnScroll={false}
-        panOnDrag={false}
-        zoomOnPinch={false}
+        onNodesChange={handleNodeChange}
+        onConnect={handleConnect} // Ensure this is hooked up
         proOptions={{ hideAttribution: true }}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         fitView
